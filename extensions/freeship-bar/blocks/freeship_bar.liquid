@@ -1,0 +1,55 @@
+{%- assign settings_json = shop.metafields.freeship.settings.value -%}
+{%- assign goal = 50.0 -%}
+{%- assign bg_color = "#000000" -%}
+{%- assign text_color = "#FFFFFF" -%}
+{%- assign progress_color = "#22C55E" -%}
+{%- assign success_msg = "Congratulations! You've unlocked FREE shipping" -%}
+{%- assign position = "top" -%}
+
+{%- if settings_json -%}
+  {%- assign goal = settings_json.goalAmount | default: 50.0 -%}
+  {%- assign bg_color = settings_json.backgroundColor | default: "#000000" -%}
+  {%- assign text_color = settings_json.textColor | default: "#FFFFFF" -%}
+  {%- assign progress_color = settings_json.progressBarColor | default: "#22C55E" -%}
+  {%- assign success_msg = settings_json.successMessage | default: "Congratulations! You've unlocked FREE shipping" -%}
+  {%- assign position = settings_json.position | default: "top" -%}
+{%- endif -%}
+
+{{ 'freeship.css' | asset_url | stylesheet_tag }}
+
+<div id="freeship-pro-bar" 
+     class="freeship-pro-bar freeship-position-{{ position }}"
+     data-goal="{{ goal }}" 
+     data-success-msg="{{ success_msg }}" 
+     data-position="{{ position }}"
+     style="--fs-bg: {{ bg_color }}; --fs-text: {{ text_color }}; --fs-progress: {{ progress_color }};">
+  <div class="freeship-pro-container">
+    <div class="freeship-pro-content">
+      <div class="freeship-pro-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13"></rect>
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+          <circle cx="5.5" cy="18.5" r="2.5"></circle>
+          <circle cx="18.5" cy="18.5" r="2.5"></circle>
+        </svg>
+      </div>
+      <div id="freeship-pro-msg" class="freeship-pro-msg">Loading free shipping...</div>
+    </div>
+    <div class="freeship-pro-progress-wrapper">
+      <div id="freeship-pro-progress" class="freeship-pro-progress-bar"></div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ 'freeship.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "FreeShip Pro Bar",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["*"]
+  },
+  "settings": []
+}
+{% endschema %}
