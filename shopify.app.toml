@@ -37,7 +37,5 @@ scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
 redirect_urls = [
-  "https://free-ship-pro.vercel.app/auth/callback",
-  "https://free-ship-pro.vercel.app/auth/shopify/callback",
-  "https://free-ship-pro.vercel.app/api/auth/callback"
+  "https://free-ship-pro.vercel.app/auth/callback"
 ]
