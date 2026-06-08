@@ -6,7 +6,7 @@ import prisma from "../db.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
 export const action = async ({ request }) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session, admin, billing } = await authenticate.admin(request);
   const formData = await request.formData();
   const planName = formData.get("plan");
 
@@ -53,64 +53,7 @@ export const action = async ({ request }) => {
     }
   }
 
-  // Paid plans: manual GraphQL to avoid useSubmit AJAX redirect issues
   const shopifyPlan = planName === "STARTER" ? PLAN_STARTER : planName === "PRO" ? PLAN_PRO : PLAN_PREMIUM;
-  const planPrices = { STARTER: 49.00, PRO: 69.00, PREMIUM: 99.00 };
-  const amount = planPrices[planName];
-
-  // Provide the exact embedded app URL
-  const returnUrl = `${process.env.SHOPIFY_APP_URL}/app/pricing`;
-  console.log("GENERATED RETURN URL:", returnUrl);
-
-  const BILLING_MUTATION = `#graphql
-    mutation AppSubscriptionCreate(
-      $name: String!
-      $returnUrl: URL!
-      $test: Boolean
-      $replacementBehavior: AppSubscriptionReplacementBehavior
-      $lineItems: [AppSubscriptionLineItemInput!]!
-    ) {
-      appSubscriptionCreate(
-        name: $name
-        returnUrl: $returnUrl
-        test: $test
-        replacementBehavior: $replacementBehavior
-        lineItems: $lineItems
-      ) {
-        appSubscription {
-          id
-          name
-          status
-          test
-        }
-        confirmationUrl
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  `;
-
-  const variables = {
-    name: shopifyPlan,
-    returnUrl: returnUrl,
-    test: true,
-    replacementBehavior: "APPLY_IMMEDIATELY",
-    lineItems: [
-      {
-        plan: {
-          appRecurringPricingDetails: {
-            interval: "EVERY_30_DAYS",
-            price: {
-              amount: amount,
-              currencyCode: "USD",
-            },
-          },
-        },
-      },
-    ],
-  };
 
   // FEATURE FLAG: Bypass billing only if in development AND the BYPASS_BILLING flag is set
   const bypassBilling = process.env.NODE_ENV === "development" && process.env.BYPASS_BILLING === "true";
@@ -128,23 +71,23 @@ export const action = async ({ request }) => {
     }
   }
 
-  // PRODUCTION BILLING: Execute actual Shopify appSubscriptionCreate mutation
+  // PRODUCTION BILLING: Execute actual Shopify billing request using the official library
+  const shopName = session.shop.replace('.myshopify.com', '');
+  const returnUrl = `https://admin.shopify.com/store/${shopName}/apps/${process.env.SHOPIFY_API_KEY}/app`;
+
   try {
-    const response = await admin.graphql(BILLING_MUTATION, { variables });
-    const responseJson = await response.json();
-    const result = responseJson.data?.appSubscriptionCreate;
-
-    if (result?.userErrors?.length) {
-      return { error: result.userErrors.map(e => e.message).join(", ") };
-    }
-
-    if (result?.confirmationUrl) {
-      return { confirmationUrl: result.confirmationUrl };
-    }
-
-    return { error: "No confirmation URL received from Shopify." };
+    await billing.request({
+      plan: shopifyPlan,
+      isTest: true,
+      returnUrl: returnUrl,
+    });
   } catch (error) {
-    return { error: error.message };
+    // billing.request throws a Response object containing the redirect URL
+    if (error instanceof Response && error.status === 302) {
+      const confirmationUrl = error.headers.get("Location");
+      return { confirmationUrl };
+    }
+    return { error: error.message || "Billing request failed" };
   }
 };
 

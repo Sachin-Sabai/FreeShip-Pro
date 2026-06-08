@@ -1,4 +1,5 @@
 import { useLoaderData, useNavigate } from "react-router";
+import { useEffect } from "react";
 import { authenticate } from "../shopify.server";
 import { PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM } from "../shopify.server";
 import prisma from "../db.server";
@@ -13,6 +14,9 @@ export const loader = async ({ request }) => {
     shop = await prisma.shop.create({ data: { id: shopDomain, plan: "FREE" } }); 
   }
 
+  const url = new URL(request.url);
+  const chargeId = url.searchParams.get("charge_id");
+
   // Get current billing plan
   let currentPlan = "FREE";
   try {
@@ -25,6 +29,15 @@ export const loader = async ({ request }) => {
       currentPlan = activeSubs[0].name;
     }
   } catch (e) { /* fallback to FREE */ }
+
+  if (shop && shop.plan !== currentPlan) {
+    await prisma.shop.upsert({
+      where: { id: shopDomain },
+      update: { plan: currentPlan },
+      create: { id: shopDomain, plan: currentPlan }
+    });
+    shop.plan = currentPlan;
+  }
 
   // Fetch real metrics
   const metrics = await prisma.dailyMetric.findMany({
@@ -52,12 +65,21 @@ export const loader = async ({ request }) => {
     ? ((totals.orders / totals.views) * 100).toFixed(1) 
     : "0.0";
 
-  return { shop, totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate };
+  return { shop, totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate, chargeApproved: !!chargeId };
 };
 
 export default function Dashboard() {
-  const { totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate } = useLoaderData();
+  const { totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate, chargeApproved } = useLoaderData();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (chargeApproved && typeof shopify !== 'undefined') {
+      shopify.toast.show("Subscription approved! Welcome to " + currentPlan);
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("charge_id");
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [chargeApproved, currentPlan]);
 
   const planColors = {
     FREE: { bg: '#f0fdf4', color: '#16a34a', badge: 'new' },
