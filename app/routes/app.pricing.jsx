@@ -1,12 +1,12 @@
 import { authenticate } from "../shopify.server";
 import { PLAN_STARTER, PLAN_PRO, PLAN_PREMIUM } from "../shopify.server";
-import { useLoaderData, useNavigation, useSubmit } from "react-router";
+import { useLoaderData, useNavigation, useSubmit, useActionData } from "react-router";
+import { useEffect, useRef } from "react";
 import prisma from "../db.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
 export const action = async ({ request }) => {
-  console.log("ACTION HIT");
-  const { session, admin, redirect } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const planName = formData.get("plan");
 
@@ -14,15 +14,53 @@ export const action = async ({ request }) => {
     return { error: "No plan selected" };
   }
 
+  // FREE plan: no billing needed, just update the DB and cancel any existing subscription
+  if (planName === "FREE") {
+    try {
+      const subscriptionsResponse = await admin.graphql(`#graphql
+        query {
+          currentAppInstallation {
+            activeSubscriptions {
+              id
+              name
+              status
+            }
+          }
+        }
+      `);
+      const subscriptionsJson = await subscriptionsResponse.json();
+      const activeSubs = subscriptionsJson.data?.currentAppInstallation?.activeSubscriptions || [];
+
+      for (const sub of activeSubs) {
+        await admin.graphql(`#graphql
+          mutation AppSubscriptionCancel($id: ID!) {
+            appSubscriptionCancel(id: $id) {
+              userErrors { field message }
+            }
+          }
+        `, { variables: { id: sub.id } });
+      }
+
+      await prisma.shop.upsert({
+        where: { id: session.shop },
+        update: { plan: "FREE" },
+        create: { id: session.shop, plan: "FREE" }
+      });
+
+      return { success: "Free plan activated successfully!" };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  // Paid plans: manual GraphQL to avoid useSubmit AJAX redirect issues
   const shopifyPlan = planName === "STARTER" ? PLAN_STARTER : planName === "PRO" ? PLAN_PRO : PLAN_PREMIUM;
   const planPrices = { STARTER: 49.00, PRO: 69.00, PREMIUM: 99.00 };
   const amount = planPrices[planName];
 
-  console.log("SHOP:", session.shop);
-  console.log("PLAN:", shopifyPlan);
-  console.log("AMOUNT:", amount);
-
-  const returnUrl = `https://admin.shopify.com/store/${session.shop.replace(".myshopify.com", "")}/apps/freeship-pro/app/pricing`;
+  // Provide the exact embedded app URL
+  const returnUrl = `${process.env.SHOPIFY_APP_URL}/app/pricing`;
+  console.log("GENERATED RETURN URL:", returnUrl);
 
   const BILLING_MUTATION = `#graphql
     mutation AppSubscriptionCreate(
@@ -74,33 +112,46 @@ export const action = async ({ request }) => {
     ],
   };
 
+  // FEATURE FLAG: Bypass billing only if in development AND the BYPASS_BILLING flag is set
+  const bypassBilling = process.env.NODE_ENV === "development" && process.env.BYPASS_BILLING === "true";
+
+  if (bypassBilling) {
+    try {
+      await prisma.shop.upsert({
+        where: { id: session.shop },
+        update: { plan: planName },
+        create: { id: session.shop, plan: planName }
+      });
+      return { success: `${planName} plan activated successfully (Dev Bypass)!` };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  // PRODUCTION BILLING: Execute actual Shopify appSubscriptionCreate mutation
   try {
-    console.log("GRAPHQL VARIABLES", JSON.stringify(variables, null, 2));
     const response = await admin.graphql(BILLING_MUTATION, { variables });
     const responseJson = await response.json();
     const result = responseJson.data?.appSubscriptionCreate;
 
+    if (result?.userErrors?.length) {
+      return { error: result.userErrors.map(e => e.message).join(", ") };
+    }
+
     if (result?.confirmationUrl) {
-      console.log("GRAPHQL RESPONSE", JSON.stringify(responseJson, null, 2));
-      console.log("CONFIRMATION URL", result.confirmationUrl);
-      console.log("REDIRECT RESPONSE SENT");
-      return redirect(result.confirmationUrl, { target: "_parent" });
-    } else {
-      console.log("GRAPHQL RESPONSE", JSON.stringify(responseJson, null, 2));
-      console.error("BILLING USER ERRORS:", JSON.stringify(result?.userErrors || [], null, 2));
-      return { error: "No confirmation URL received", userErrors: result?.userErrors || [] };
+      return { confirmationUrl: result.confirmationUrl };
     }
+
+    return { error: "No confirmation URL received from Shopify." };
   } catch (error) {
-    if (error instanceof Response) {
-      throw error;
-    }
-    console.error("BILLING EXCEPTION:", error.message);
     return { error: error.message };
   }
 };
 
 export const loader = async ({ request }) => {
   const { session, billing } = await authenticate.admin(request);
+  const url = new URL(request.url);
+  const chargeId = url.searchParams.get("charge_id");
   
   try {
     const billingCheck = await billing.check({
@@ -109,32 +160,100 @@ export const loader = async ({ request }) => {
     });
 
     const activeSubscriptions = billingCheck.appSubscriptions;
-    const currentPlanName = activeSubscriptions.length > 0 ? activeSubscriptions[0].name : "STARTER";
+    let currentPlanName = "FREE";
+
+    if (activeSubscriptions.length > 0) {
+      currentPlanName = activeSubscriptions[0].name;
+    }
     
+    const bypassBilling = process.env.NODE_ENV === "development" && process.env.BYPASS_BILLING === "true";
     const shop = await prisma.shop.findUnique({ where: { id: session.shop } });
-    if (!shop || shop.plan !== currentPlanName) {
+
+    if (!shop || (!bypassBilling && shop.plan !== currentPlanName)) {
+      // If no bypass, or shop is new: Sync local DB with Shopify's actual billing state
       await prisma.shop.upsert({
         where: { id: session.shop },
         update: { plan: currentPlanName },
         create: { id: session.shop, plan: currentPlanName }
       });
+    } else if (bypassBilling && shop) {
+      // If bypassing: Trust the local DB plan over Shopify's empty billing state
+      currentPlanName = shop.plan;
     }
 
-    return { currentPlan: currentPlanName };
+    return { currentPlan: currentPlanName, chargeApproved: !!chargeId };
   } catch (error) {
-    return { currentPlan: "STARTER" };
+    return { currentPlan: "FREE", chargeApproved: false };
   }
 };
 
 export default function Pricing() {
-  const { currentPlan } = useLoaderData();
+  const { currentPlan, chargeApproved } = useLoaderData();
+  const actionData = useActionData();
   const submit = useSubmit();
   const navigation = useNavigation();
+  const billingFormRef = useRef(null);
+  
+  // Show toast if returning from billing approval
+  useEffect(() => {
+    if (chargeApproved && typeof shopify !== 'undefined') {
+      shopify.toast.show("Plan successfully updated!");
+      // Clean up the URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("charge_id");
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [chargeApproved]);
+
+  // Handle action results
+  useEffect(() => {
+    if (actionData?.confirmationUrl && billingFormRef.current) {
+      billingFormRef.current.submit();
+    } else if (actionData?.success) {
+      if (typeof shopify !== 'undefined') {
+        shopify.toast.show(actionData.success);
+      }
+      window.location.reload();
+    } else if (actionData?.error) {
+      if (typeof shopify !== 'undefined') {
+        shopify.toast.show(actionData.error, { isError: true });
+      }
+    }
+  }, [actionData]);
+
+  // If we have a confirmation URL, show a redirecting page with hidden auto-submit form
+  if (actionData?.confirmationUrl) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '16px' }}>
+        <div style={{ width: '40px', height: '40px', border: '4px solid #e5e7eb', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ fontSize: '16px', color: '#64748b' }}>Redirecting to Shopify billing...</p>
+        <form
+          ref={billingFormRef}
+          method="GET"
+          action={actionData.confirmationUrl}
+          target="_top"
+          style={{ display: 'none' }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
   
   const isSubmitting = navigation.state === "submitting";
   const submittingPlan = navigation.formData?.get("plan");
 
   const plans = [
+    {
+      name: "FREE",
+      price: "$0",
+      description: "Get started with a basic free shipping bar at no cost.",
+      features: [
+        "Basic Free Shipping Bar",
+        "1 Active Campaign",
+        "Standard Placement",
+        "No Credit Card Required"
+      ]
+    },
     {
       name: "STARTER",
       price: "$49",
@@ -176,16 +295,22 @@ export default function Pricing() {
     <div style={{ padding: '60px 20px', background: 'radial-gradient(ellipse at top, #f8fafc, #ffffff)', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-          <h1 style={{ fontSize: '42px', fontWeight: '800', color: '#0f172a', marginBottom: '16px', letterSpacing: '-1px' }}>Simple, transparent pricing</h1>
+          <h1 style={{ fontSize: '42px', fontWeight: '800', color: '#0f172a', marginBottom: '16px', letterSpacing: '-1px' }}>Pricing and Plans</h1>
           <p style={{ fontSize: '18px', color: '#64748b', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>Upgrade your plan to unlock premium animated features and drastically increase your average order value.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', alignItems: 'stretch' }}>
           {plans.map(plan => {
             const isCurrent = currentPlan === plan.name;
             
             let baseBg, baseColor, baseBorderColor, baseDescColor, iconColor;
-            if (plan.name === "STARTER") {
+            if (plan.name === "FREE") {
+              baseBg = '#f0fdf4';
+              baseColor = '#166534';
+              baseBorderColor = '#86efac';
+              baseDescColor = '#15803d';
+              iconColor = '#22c55e';
+            } else if (plan.name === "STARTER") {
               baseBg = '#f8fafc';
               baseColor = '#0f172a';
               baseBorderColor = '#cbd5e1';
@@ -267,7 +392,10 @@ export default function Pricing() {
                       onMouseOver={(e) => { if(!isSubmitting) e.currentTarget.style.transform = 'translateY(-2px)' }}
                       onMouseOut={(e) => { if(!isSubmitting) e.currentTarget.style.transform = 'translateY(0)' }}
                     >
-                      {isSubmitting && submittingPlan === plan.name ? 'Updating...' : `Upgrade to ${plan.name}`}
+                      {isSubmitting && submittingPlan === plan.name ? 'Updating...' : 
+                        isCurrent ? null : 
+                        plan.name === 'FREE' ? 'Activate Free Plan' : `Upgrade to ${plan.name}`
+                      }
                     </button>
                   )}
                 </div>

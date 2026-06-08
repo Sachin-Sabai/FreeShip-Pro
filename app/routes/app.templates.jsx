@@ -1,16 +1,30 @@
 import { useState } from "react";
 import { Page, Layout, Card, Text, BlockStack, InlineStack, Badge, Button, Grid, Box, Modal } from "@shopify/polaris";
+import { useSubmit } from "react-router";
 
-const STARTER_TEMPLATES = [
-  { 
-    id: 1, name: "Minimal Clean", value: "minimal", category: "Minimal", score: "94", tags: ["Fast", "High Converting"],
-    style: { background: '#ffffff', color: '#111827', border: '1px solid #e5e7eb', progress: '#10b981', font: 'system-ui' },
+const FREE_TEMPLATES = [
+  {
+    id: 0, name: "Basic Free Bar", value: "basic", category: "Basic", score: "78", tags: ["Free", "Simple"],
+    style: { background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', progress: '#22c55e', font: 'system-ui' },
     previewText: "Only $10.00 away from free shipping!"
   },
   { 
-    id: 6, name: "Cosmetics Pearl", value: "pearl", category: "Beauty", score: "95", tags: ["Soft", "Feminine"],
+    id: 6, name: "Cosmetics Pearl", value: "pearl", category: "Beauty", score: "84", tags: ["Free", "Soft"],
     style: { background: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)', color: '#4a4a4a', border: '1px solid #f3e5f5', progress: '#ec4899', font: 'Georgia, serif' },
     previewText: "You are $10.00 away from FREE shipping"
+  },
+];
+
+const STARTER_TEMPLATES = [
+  { 
+    id: 7, name: "Ocean Breeze", value: "ocean", category: "Modern", score: "92", tags: ["Gradient", "Smooth"],
+    style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#ffffff', border: 'none', progress: 'linear-gradient(90deg, #a5b4fc, #818cf8)', font: 'system-ui' },
+    previewText: "🚚 You are $10.00 away from FREE shipping!"
+  },
+  { 
+    id: 8, name: "Sunset Warm", value: "sunset", category: "Vibrant", score: "93", tags: ["Bold", "Eye-Catching"],
+    style: { background: 'linear-gradient(135deg, #f97316 0%, #ef4444 50%, #ec4899 100%)', color: '#ffffff', border: 'none', progress: 'linear-gradient(90deg, #fcd34d, #fbbf24)', font: 'system-ui', fontWeight: 'bold' },
+    previewText: "🔥 Only $10.00 left for FREE shipping!"
   },
 ];
 
@@ -55,17 +69,18 @@ const TemplatePreview = ({ style, text }) => {
 };
 
 export default function Templates() {
+  const submit = useSubmit();
   const [previewModal, setPreviewModal] = useState({ open: false, template: null });
 
-  const renderTemplateGroup = (templates, planName, price, planDetails) => (
+  const renderTemplateGroup = (templates, planName, price, planDetails, isFree) => (
     <BlockStack gap="400">
       <Card>
         <BlockStack gap="300">
           <InlineStack align="space-between">
             <Text as="h2" variant="headingLg">{planName} Templates</Text>
             <InlineStack gap="200" align="center">
-              <Text variant="bodyMd" fontWeight="bold" tone="subdued">${price}/mo</Text>
-              <Badge tone={planName === 'PREMIUM' ? 'success' : planName === 'PRO' ? 'magic' : 'info'}>{planName} PLAN</Badge>
+              <Text variant="bodyMd" fontWeight="bold" tone="subdued">{isFree ? 'Free' : `$${price}/mo`}</Text>
+              <Badge tone={planName === 'PREMIUM' ? 'success' : planName === 'PRO' ? 'magic' : planName === 'FREE' ? 'new' : 'info'}>{planName} PLAN</Badge>
             </InlineStack>
           </InlineStack>
           <Text as="p" tone="subdued">{planDetails}</Text>
@@ -97,13 +112,21 @@ export default function Templates() {
                   
                   <Box paddingBlockStart="200">
                     <InlineStack gap="200" align="space-between">
-                      {/* Fixing Live Preview button by explicitly binding the onClick */}
                       <Button onClick={() => setPreviewModal({ open: true, template: tpl })}>Live Preview</Button>
                       
-                      {/* Fixing Apply button by using Polaris Button with URL which handles App Bridge routing */}
-                      <Button variant="primary" url={`/app/campaigns/new?template=${tpl.value}`}>
-                        Apply Template
-                      </Button>
+                      {isFree ? (
+                        <Button variant="primary" url={`/app/campaigns/new?template=${tpl.value}`}>
+                          Apply Template
+                        </Button>
+                      ) : (
+                        <Button variant="primary" onClick={() => {
+                          const formData = new FormData();
+                          formData.append("plan", planName);
+                          submit(formData, { method: "post", action: "/app/pricing" });
+                        }}>
+                          Apply Template
+                        </Button>
+                      )}
                     </InlineStack>
                   </Box>
                 </BlockStack>
@@ -166,6 +189,14 @@ export default function Templates() {
         <Layout>
           <Layout.Section>
             <BlockStack gap="600">
+              {renderTemplateGroup(
+                FREE_TEMPLATES,
+                "FREE",
+                "0",
+                "Get started with a basic free shipping bar at no cost. No credit card required. Perfect for trying out the app.",
+                true
+              )}
+
               {renderTemplateGroup(
                 STARTER_TEMPLATES, 
                 "STARTER", 

@@ -30,7 +30,7 @@ export default function App() {
           <s-link href="/app/campaigns">Campaigns</s-link>
           <s-link href="/app/templates">Templates</s-link>
           <s-link href="/app/analytics">Analytics</s-link>
-          <s-link href="/app/pricing">Pricing</s-link>
+          <s-link href="/app/pricing">Pricing and Plans</s-link>
         </s-app-nav>
         <Outlet />
       </PolarisAppProvider>
