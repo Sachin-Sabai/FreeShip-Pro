@@ -2,7 +2,7 @@
 
 client_id = "5f9569895aecbdc7f34c6e3bd36f3b9c"
 name = "FreeShip Pro"
-application_url = "https://example.com"
+application_url = "https://free-ship-pro.vercel.app"
 embedded = true
 
 [build]
@@ -36,4 +36,8 @@ api_version = "2026-07"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [
+  "https://free-ship-pro.vercel.app/auth/callback",
+  "https://free-ship-pro.vercel.app/auth/shopify/callback",
+  "https://free-ship-pro.vercel.app/api/auth/callback"
+]
