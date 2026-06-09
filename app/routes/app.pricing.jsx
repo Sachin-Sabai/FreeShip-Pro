@@ -74,23 +74,26 @@ export const action = async ({ request }) => {
     }
   }
 
-  // PRODUCTION BILLING: Execute actual Shopify billing request using the official library
-  const shopName = session.shop.replace('.myshopify.com', '');
-  const returnUrl = `https://admin.shopify.com/store/${shopName}/apps/${process.env.SHOPIFY_API_KEY}/app`;
-
+  // Use the official Shopify App Bridge billing API
+  // We MUST NOT catch the redirect Response thrown by billing.request()!
   try {
+    const shopName = session.shop.replace('.myshopify.com', '');
+    const returnUrl = `https://admin.shopify.com/store/${shopName}/apps/${process.env.SHOPIFY_API_KEY}/app/pricing`;
+    
+    // billing.request throws a Response object to redirect the user to the approval screen.
     await billing.request({
       plan: shopifyPlan,
       isTest: true,
       returnUrl: returnUrl,
     });
+    
+    return null;
   } catch (error) {
-    // billing.request throws a Response object containing the redirect URL
-    if (error instanceof Response && error.status === 302) {
-      const confirmationUrl = error.headers.get("Location");
-      return { confirmationUrl };
+    if (error instanceof Response) {
+      throw error;
     }
-    return { error: error.message || "Billing request failed" };
+    console.error("Billing Request Error:", error);
+    return { error: error.message || String(error) };
   }
 };
 

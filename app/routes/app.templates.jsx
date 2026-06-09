@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Page, Layout, Card, Text, BlockStack, InlineStack, Badge, Button, Grid, Box, Modal } from "@shopify/polaris";
-import { useSubmit } from "react-router";
+import { useSubmit, useNavigate } from "react-router";
 
 const FREE_TEMPLATES = [
   {
@@ -70,6 +70,7 @@ const TemplatePreview = ({ style, text }) => {
 
 export default function Templates() {
   const submit = useSubmit();
+  const navigate = useNavigate();
   const [previewModal, setPreviewModal] = useState({ open: false, template: null });
 
   const renderTemplateGroup = (templates, planName, price, planDetails, isFree) => (
@@ -115,15 +116,11 @@ export default function Templates() {
                       <Button onClick={() => setPreviewModal({ open: true, template: tpl })}>Live Preview</Button>
                       
                       {isFree ? (
-                        <Button variant="primary" url={`/app/campaigns/new?template=${tpl.value}`}>
+                        <Button variant="primary" onClick={() => navigate(`/app/campaigns/new?template=${tpl.value}`)}>
                           Apply Template
                         </Button>
                       ) : (
-                        <Button variant="primary" onClick={() => {
-                          const formData = new FormData();
-                          formData.append("plan", planName);
-                          submit(formData, { method: "post", action: "/app/pricing" });
-                        }}>
+                        <Button variant="primary" onClick={() => navigate("/app/pricing")}>
                           Apply Template
                         </Button>
                       )}
@@ -267,8 +264,17 @@ export default function Templates() {
             
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               {previewModal.template && (
-                <Button variant="primary" url={`/app/campaigns/new?template=${previewModal.template.value}`}>
-                  Use This Template
+                <Button 
+                  variant="primary" 
+                  onClick={() => {
+                    if (previewModal.template.tags.includes("Free")) {
+                      navigate(`/app/campaigns/new?template=${previewModal.template.value}`);
+                    } else {
+                      navigate("/app/pricing");
+                    }
+                  }}
+                >
+                  {previewModal.template.tags.includes("Free") ? "Use This Template" : "Upgrade to Use Template"}
                 </Button>
               )}
             </div>
