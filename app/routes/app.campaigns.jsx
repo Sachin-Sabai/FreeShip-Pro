@@ -1,7 +1,25 @@
 import { Page, Layout, Card, Text, BlockStack, InlineStack, Badge, Button, IndexTable, useIndexResourceState } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate, useSubmit } from "react-router";
+
+export const action = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  const formData = await request.formData();
+  
+  if (formData.get("_action") === "delete") {
+    const ids = JSON.parse(formData.get("ids") || "[]");
+    if (ids.length > 0) {
+      await prisma.campaign.deleteMany({
+        where: {
+          id: { in: ids },
+          shopId: session.shop
+        }
+      });
+    }
+  }
+  return { success: true };
+};
 
 export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);
@@ -15,14 +33,31 @@ export const loader = async ({ request }) => {
 export default function Campaigns() {
   const { campaigns } = useLoaderData();
   const navigate = useNavigate();
+  const submit = useSubmit();
 
   const resourceName = {
     singular: 'campaign',
     plural: 'campaigns',
   };
 
-  const {selectedResources, allResourcesSelected, handleSelectionChange} =
+  const {selectedResources, allResourcesSelected, handleSelectionChange, clearSelection} =
     useIndexResourceState(campaigns);
+
+  const handleDelete = () => {
+    const formData = new FormData();
+    formData.append("_action", "delete");
+    formData.append("ids", JSON.stringify(selectedResources));
+    submit(formData, { method: "post" });
+    clearSelection();
+  };
+
+  const promotedBulkActions = [
+    {
+      content: 'Delete',
+      onAction: handleDelete,
+      destructive: true,
+    },
+  ];
 
   const rowMarkup = campaigns.map(
     ({id, name, goalAmount, templateId, isActive, createdAt}, index) => (
@@ -80,6 +115,7 @@ export default function Campaigns() {
                     allResourcesSelected ? 'All' : selectedResources.length
                   }
                   onSelectionChange={handleSelectionChange}
+                  promotedBulkActions={promotedBulkActions}
                   headings={[
                     {title: 'Name'},
                     {title: 'Status'},

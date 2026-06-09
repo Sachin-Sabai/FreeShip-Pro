@@ -1,84 +1,36 @@
 import { useState } from "react";
-import { Page, Layout, Card, Text, BlockStack, InlineStack, Badge, Button, Grid, Box, Modal } from "@shopify/polaris";
-import { useSubmit, useNavigate } from "react-router";
+import { Page, Layout, Card, Text, BlockStack, InlineStack, Badge, Button, Grid, Box, Modal, Banner } from "@shopify/polaris";
+import { useSubmit, useNavigate, useLoaderData } from "react-router";
+import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+import { 
+  FREE_TEMPLATES, STARTER_TEMPLATES, PRO_TEMPLATES, PREMIUM_TEMPLATES, 
+  TemplatePreview 
+} from "../utils/templates";
 
-const FREE_TEMPLATES = [
-  {
-    id: 0, name: "Basic Free Bar", value: "basic", category: "Basic", score: "78", tags: ["Free", "Simple"],
-    style: { background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', progress: '#22c55e', font: 'system-ui' },
-    previewText: "Only $10.00 away from free shipping!"
-  },
-  { 
-    id: 6, name: "Cosmetics Pearl", value: "pearl", category: "Beauty", score: "84", tags: ["Free", "Soft"],
-    style: { background: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)', color: '#4a4a4a', border: '1px solid #f3e5f5', progress: '#ec4899', font: 'Georgia, serif' },
-    previewText: "You are $10.00 away from FREE shipping"
-  },
-];
-
-const STARTER_TEMPLATES = [
-  { 
-    id: 7, name: "Ocean Breeze", value: "ocean", category: "Modern", score: "92", tags: ["Gradient", "Smooth"],
-    style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#ffffff', border: 'none', progress: 'linear-gradient(90deg, #a5b4fc, #818cf8)', font: 'system-ui' },
-    previewText: "🚚 You are $10.00 away from FREE shipping!"
-  },
-  { 
-    id: 8, name: "Sunset Warm", value: "sunset", category: "Vibrant", score: "93", tags: ["Bold", "Eye-Catching"],
-    style: { background: 'linear-gradient(135deg, #f97316 0%, #ef4444 50%, #ec4899 100%)', color: '#ffffff', border: 'none', progress: 'linear-gradient(90deg, #fcd34d, #fbbf24)', font: 'system-ui', fontWeight: 'bold' },
-    previewText: "🔥 Only $10.00 left for FREE shipping!"
-  },
-];
-
-const PRO_TEMPLATES = [
-  { 
-    id: 2, name: "Midnight Luxury", value: "luxury", category: "Luxury", score: "98", tags: ["Premium", "Glass"],
-    style: { background: 'linear-gradient(270deg, #0f2027, #203a43, #2c5364)', color: '#ffd700', border: 'none', progress: '#ffd700', font: 'system-ui', animation: 'fs-fill-luxury 4.5s cubic-bezier(0.22, 1, 0.36, 1) infinite' },
-    previewText: "You are $10.00 away from FREE shipping"
-  },
-  { 
-    id: 3, name: "Neon Pulse", value: "neon", category: "Neon", score: "91", tags: ["Animated", "Gen Z"],
-    style: { background: '#000000', color: '#39ff14', border: '1px solid #39ff14', progress: '#39ff14', font: 'monospace', animation: 'fs-fill-neon 3s ease-out infinite' },
-    previewText: "ONLY $10.00 AWAY FROM FREE SHIPPING"
-  }
-];
-
-const PREMIUM_TEMPLATES = [
-  { 
-    id: 4, name: "Black Friday Urgency", value: "bfcm", category: "Sale", score: "99", tags: ["Urgency", "Timer"],
-    style: { background: '#dc2626', color: '#ffffff', border: 'none', progress: 'linear-gradient(45deg, rgba(0,0,0,0.15) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15) 75%, transparent 75%, transparent) 0 0 / 20px 20px #fbbf24', font: 'system-ui', fontWeight: 'bold', animation: 'fs-fill-urgency 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite, fs-stripes-move 0.8s linear infinite' },
-    previewText: "HURRY! Only $10.00 away from FREE shipping!"
-  },
-  { 
-    id: 5, name: "Classic Progress", value: "classic", category: "Classic", score: "96", tags: ["Familiar", "Animated"],
-    style: { background: '#ffffff', color: '#111827', border: '1px solid #e5e7eb', progress: 'linear-gradient(45deg, rgba(255,255,255,0.25) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.25) 75%, transparent 75%, transparent) 0 0 / 20px 20px #10b981', font: 'system-ui', animation: 'fs-fill-summer 3.5s ease-in-out infinite, fs-stripes-move 1s linear infinite' },
-    previewText: "You are $10.00 away from FREE shipping"
-  }
-];
-
-const TemplatePreview = ({ style, text }) => {
-  const { animation, ...outerStyle } = style;
-  return (
-    <div style={{ padding: '16px 24px', borderRadius: '6px', ...outerStyle }}>
-      <div style={{ textAlign: 'center', fontSize: '14px', marginBottom: '8px', fontWeight: style.fontWeight || 'normal', fontFamily: style.font }}>
-        {text}
-      </div>
-      <div style={{ width: '100%', height: '6px', background: 'rgba(128,128,128,0.2)', borderRadius: '10px', overflow: 'hidden' }}>
-        <div style={{ width: '65%', height: '100%', background: style.progress, borderRadius: '10px', animation: animation || 'none' }}></div>
-      </div>
-    </div>
-  );
+export const loader = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  const shop = await prisma.shop.findUnique({ where: { id: session.shop } });
+  return { activePlan: shop?.plan || "FREE" };
 };
 
 export default function Templates() {
+  const { activePlan } = useLoaderData();
   const submit = useSubmit();
   const navigate = useNavigate();
   const [previewModal, setPreviewModal] = useState({ open: false, template: null });
 
-  const renderTemplateGroup = (templates, planName, price, planDetails, isFree) => (
+  const renderTemplateGroup = (templates, planName, price, planDetails, isFree) => {
+    const isActivePlan = activePlan === planName;
+    return (
     <BlockStack gap="400">
       <Card>
         <BlockStack gap="300">
           <InlineStack align="space-between">
-            <Text as="h2" variant="headingLg">{planName} Templates</Text>
+            <InlineStack gap="300" align="center">
+              <Text as="h2" variant="headingLg">{planName} Templates</Text>
+              {isActivePlan && <Badge tone="success">Active Plan</Badge>}
+            </InlineStack>
             <InlineStack gap="200" align="center">
               <Text variant="bodyMd" fontWeight="bold" tone="subdued">{isFree ? 'Free' : `$${price}/mo`}</Text>
               <Badge tone={planName === 'PREMIUM' ? 'success' : planName === 'PRO' ? 'magic' : planName === 'FREE' ? 'new' : 'info'}>{planName} PLAN</Badge>
@@ -91,7 +43,7 @@ export default function Templates() {
       <Grid>
         {templates.map(tpl => (
           <Grid.Cell key={tpl.id} columnSpan={{xs: 6, sm: 6, md: 6, lg: 6, xl: 6}}>
-            <div className="fs-template-card" style={{ background: 'white', border: '1px solid #e5e7eb', boxShadow: 'var(--fs-shadow-soft)', borderRadius: '12px', overflow: 'hidden' }}>
+            <div className="fs-template-card" style={{ background: 'white', border: isActivePlan ? '2px solid var(--p-color-border-success)' : '1px solid #e5e7eb', boxShadow: 'var(--fs-shadow-soft)', borderRadius: '12px', overflow: 'hidden' }}>
               <div className="fs-template-preview" style={{ padding: '32px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '150px' }}>
                 <div style={{ width: '100%', maxWidth: '400px' }}>
                   <TemplatePreview style={tpl.style} text={tpl.previewText} />
@@ -115,7 +67,7 @@ export default function Templates() {
                     <InlineStack gap="200" align="space-between">
                       <Button onClick={() => setPreviewModal({ open: true, template: tpl })}>Live Preview</Button>
                       
-                      {isFree ? (
+                      {isFree || isActivePlan ? (
                         <Button variant="primary" onClick={() => navigate(`/app/campaigns/new?template=${tpl.value}`)}>
                           Apply Template
                         </Button>
@@ -133,7 +85,7 @@ export default function Templates() {
         ))}
       </Grid>
     </BlockStack>
-  );
+  )};
 
   return (
     <div className="fs-animate-in">
@@ -183,6 +135,11 @@ export default function Templates() {
       `}</style>
 
       <Page title="Template Gallery" subtitle="Professionally designed templates to maximize your conversion rate.">
+        <Box paddingBlockEnd="400">
+          <Banner title={`Your Active Plan: ${activePlan}`} tone="success">
+            <p>You can apply any template from your currently active plan or the free tier.</p>
+          </Banner>
+        </Box>
         <Layout>
           <Layout.Section>
             <BlockStack gap="600">

@@ -302,12 +302,12 @@ export default function Pricing() {
                 transition: 'all 0.3s ease'
               }}>
                 {isCurrent && (
-                  <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(90deg, #10b981, #3b82f6)', color: 'white', padding: '6px 20px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                  <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: 'linear-gradient(90deg, #10b981, #3b82f6)', color: 'white', padding: '6px 20px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                     Active Plan
                   </div>
                 )}
 
-                <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.5px' }}>{plan.name}</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', marginTop: isCurrent ? '12px' : '0', letterSpacing: '-0.5px' }}>{plan.name}</h3>
                 <p style={{ fontSize: '13px', color: descColor, minHeight: '38px', marginBottom: '16px', lineHeight: '1.4' }}>{plan.description}</p>
                 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '20px' }}>
