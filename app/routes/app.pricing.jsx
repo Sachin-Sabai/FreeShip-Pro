@@ -5,6 +5,9 @@ import { useEffect, useRef } from "react";
 import prisma from "../db.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
+/* global process */
+
+
 export const action = async ({ request }) => {
   const { session, admin, billing } = await authenticate.admin(request);
   const formData = await request.formData();
@@ -237,9 +240,9 @@ export default function Pricing() {
   return (
     <div style={{ padding: '60px 20px', background: 'radial-gradient(ellipse at top, #f8fafc, #ffffff)', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-          <h1 style={{ fontSize: '42px', fontWeight: '800', color: '#0f172a', marginBottom: '16px', letterSpacing: '-1px' }}>Pricing and Plans</h1>
-          <p style={{ fontSize: '18px', color: '#64748b', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>Upgrade your plan to unlock premium animated features and drastically increase your average order value.</p>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', marginBottom: '12px', letterSpacing: '-0.5px' }}>Pricing and Plans</h1>
+          <p style={{ fontSize: '15px', color: '#64748b', maxWidth: '600px', margin: '0 auto', lineHeight: '1.5' }}>Upgrade your plan to unlock premium animated features and drastically increase your average order value.</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', alignItems: 'stretch' }}>
@@ -286,8 +289,8 @@ export default function Pricing() {
               <div key={plan.name} style={{
                 background: bg,
                 color: color,
-                borderRadius: '24px',
-                padding: '48px 40px',
+                borderRadius: '16px',
+                padding: '24px 24px',
                 border: `1px solid ${borderColor}`,
                 boxShadow: shadow,
                 transform: transform,
@@ -301,15 +304,15 @@ export default function Pricing() {
                   </div>
                 )}
 
-                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.5px' }}>{plan.name}</h3>
-                <p style={{ fontSize: '15px', color: descColor, minHeight: '44px', marginBottom: '28px', lineHeight: '1.5' }}>{plan.description}</p>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.5px' }}>{plan.name}</h3>
+                <p style={{ fontSize: '13px', color: descColor, minHeight: '38px', marginBottom: '16px', lineHeight: '1.4' }}>{plan.description}</p>
                 
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '32px' }}>
-                  <span style={{ fontSize: '56px', fontWeight: '800', lineHeight: '1', letterSpacing: '-2px' }}>{plan.price}</span>
-                  <span style={{ fontSize: '16px', color: descColor, fontWeight: '500' }}>/month</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '20px' }}>
+                  <span style={{ fontSize: '36px', fontWeight: '800', lineHeight: '1', letterSpacing: '-1px' }}>{plan.price}</span>
+                  <span style={{ fontSize: '14px', color: descColor, fontWeight: '500' }}>/month</span>
                 </div>
 
-                <div style={{ marginBottom: '40px' }}>
+                <div style={{ marginBottom: '24px' }}>
                   {isCurrent ? (
                     <button disabled style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', color: '#94a3b8', fontWeight: '700', fontSize: '15px', border: '1px solid transparent', cursor: 'not-allowed' }}>
                       Current Plan
@@ -322,10 +325,10 @@ export default function Pricing() {
                       }}
                       disabled={isSubmitting}
                       style={{ 
-                        width: '100%', padding: '16px', borderRadius: '14px', 
+                        width: '100%', padding: '12px', borderRadius: '10px', 
                         background: '#0f172a', 
                         color: '#ffffff', 
-                        fontWeight: '700', fontSize: '15px',
+                        fontWeight: '700', fontSize: '14px',
                         border: 'none',
                         cursor: isSubmitting ? 'not-allowed' : 'pointer',
                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -333,7 +336,9 @@ export default function Pricing() {
                         opacity: isSubmitting ? ((isSubmitting && submittingPlan === plan.name) ? 0.7 : 0.5) : 1
                       }}
                       onMouseOver={(e) => { if(!isSubmitting) e.currentTarget.style.transform = 'translateY(-2px)' }}
+                      onFocus={(e) => { if(!isSubmitting) e.currentTarget.style.transform = 'translateY(-2px)' }}
                       onMouseOut={(e) => { if(!isSubmitting) e.currentTarget.style.transform = 'translateY(0)' }}
+                      onBlur={(e) => { if(!isSubmitting) e.currentTarget.style.transform = 'translateY(0)' }}
                     >
                       {isSubmitting && submittingPlan === plan.name ? 'Updating...' : 
                         isCurrent ? null : 
@@ -345,13 +350,13 @@ export default function Pricing() {
 
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                   {plan.features.map((feature, i) => (
-                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '20px' }}>
+                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
                       <div style={{ color: currentIconColor, flexShrink: 0, marginTop: '2px' }}>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
                       </div>
-                      <span style={{ fontSize: '15px', color: isCurrent ? '#e2e8f0' : baseColor, fontWeight: '500', lineHeight: '1.4' }}>{feature}</span>
+                      <span style={{ fontSize: '13px', color: isCurrent ? '#e2e8f0' : baseColor, fontWeight: '500', lineHeight: '1.4' }}>{feature}</span>
                     </li>
                   ))}
                 </ul>
