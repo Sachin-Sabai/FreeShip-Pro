@@ -9,6 +9,13 @@ export const loader = async ({ request }) => {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
+  // If it's a client-side navigation inside the embedded app,
+  // App Bridge will attach a Bearer token. Redirect to dashboard.
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    throw redirect("/app");
+  }
+
   return { showForm: Boolean(login) };
 };
 
