@@ -15,14 +15,13 @@ export const PLAN_PREMIUM = "PREMIUM";
 
 const finalAppUrl = process.env.SHOPIFY_APP_URL || "https://freeshippro.norexa.online";
 
-console.log("=========================================");
-console.log("SHOPIFY APP STARTUP AUDIT:");
-console.log("process.env.SHOPIFY_APP_URL =", process.env.SHOPIFY_APP_URL);
-console.log("process.env.APP_URL =", process.env.APP_URL);
-console.log("process.env.VERCEL_URL =", process.env.VERCEL_URL);
-console.log("process.env.HOST =", process.env.HOST);
-console.log("finalAppUrl configured for AppBridge =", finalAppUrl);
-console.log("=========================================");
+console.log("=== SHOPIFY STARTUP AUDIT ===");
+console.log("SHOPIFY_APP_URL =", process.env.SHOPIFY_APP_URL);
+console.log("APP_URL =", process.env.APP_URL);
+console.log("HOST =", process.env.HOST);
+console.log("VERCEL_URL =", process.env.VERCEL_URL);
+console.log("Final appUrl =", finalAppUrl);
+console.log("============================");
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
