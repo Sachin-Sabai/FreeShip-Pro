@@ -162,7 +162,6 @@ export default function Pricing() {
       if (typeof shopify !== 'undefined') {
         shopify.toast.show(actionData.success);
       }
-      window.location.reload();
     } else if (actionData?.error) {
       if (typeof shopify !== 'undefined') {
         shopify.toast.show(actionData.error, { isError: true });
