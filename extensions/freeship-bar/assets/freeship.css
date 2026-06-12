@@ -10,7 +10,7 @@
 }
 
 .freeship-pro-bar.freeship-position-top {
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
 }
