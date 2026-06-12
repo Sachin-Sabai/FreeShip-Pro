@@ -19,8 +19,6 @@
   {%- assign animation = settings_json.animation | default: "none" -%}
 {%- endif -%}
 
-{{ 'freeship.css' | asset_url | stylesheet_tag }}
-
 <div id="freeship-pro-bar" 
      class="freeship-pro-bar freeship-position-{{ position }}"
      data-goal="{{ goal }}" 
@@ -46,15 +44,12 @@
   </div>
 </div>
 
-<script src="{{ 'freeship.js' | asset_url }}" defer></script>
-
 {% schema %}
 {
   "name": "FreeShip Pro Bar",
   "target": "body",
-  "enabled_on": {
-    "templates": ["*"]
-  },
+  "javascript": "freeship.js",
+  "stylesheet": "freeship.css",
   "settings": []
 }
 {% endschema %}
