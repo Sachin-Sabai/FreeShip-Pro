@@ -87,43 +87,31 @@ export default function NewCampaign() {
   return (
     <div className="fs-animate-in">
       <style>{`
-        /* Smooth, elegant fill with fade out to loop cleanly */
+        /* Premium Animations */
         @keyframes fs-fill-luxury {
-          0% { width: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          40% { width: 65%; }
-          85% { width: 65%; opacity: 1; }
-          100% { width: 65%; opacity: 0; }
+          0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+          50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); }
+          100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
         }
-        
-        /* Steady glide with a breathing neon glow */
+
         @keyframes fs-fill-neon {
-          0% { width: 0%; box-shadow: 0 0 0px #39ff14; opacity: 0; }
-          15% { opacity: 1; box-shadow: 0 0 8px #39ff14; }
-          45% { width: 65%; box-shadow: 0 0 16px #39ff14; }
-          85% { width: 65%; box-shadow: 0 0 8px #39ff14; opacity: 1; }
-          100% { width: 65%; opacity: 0; }
+          0% { box-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14; }
+          50% { box-shadow: 0 0 20px #39ff14, 0 0 30px #39ff14; }
+          100% { box-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14; }
         }
 
-        /* Fast, snappy impact for urgency */
         @keyframes fs-fill-urgency {
-          0% { width: 0%; opacity: 0; }
-          5% { opacity: 1; }
-          25% { width: 65%; }
-          85% { width: 65%; opacity: 1; }
-          100% { width: 65%; opacity: 0; }
+          0% { filter: brightness(1); }
+          50% { filter: brightness(1.2); }
+          100% { filter: brightness(1); }
         }
 
-        /* Relaxed, fluid wave filling */
         @keyframes fs-fill-summer {
-          0% { width: 0%; opacity: 0; }
-          15% { opacity: 1; }
-          50% { width: 65%; }
-          85% { width: 65%; opacity: 1; }
-          100% { width: 65%; opacity: 0; }
+          0% { filter: contrast(1); }
+          50% { filter: contrast(1.2); }
+          100% { filter: contrast(1); }
         }
 
-        /* Seamless sliding stripes */
         @keyframes fs-stripes-move {
           0% { background-position: 0 0; }
           100% { background-position: 20px 0; }
