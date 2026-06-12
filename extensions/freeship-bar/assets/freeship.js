@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const goal = parseFloat(bar.getAttribute('data-goal')) || 50;
   const successMsg = bar.getAttribute('data-success-msg');
+  const progressMsg = bar.getAttribute('data-progress-msg') || 'Add $10.00 more to unlock FREE shipping';
   const position = bar.getAttribute('data-position');
 
   if (position === 'top') {
@@ -20,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const remainingDollars = goal - totalDollars;
 
     if (remainingDollars > 0) {
-      msgEl.innerHTML = `Add <strong>$${remainingDollars.toFixed(2)}</strong> more to unlock FREE shipping`;
+      const formattedAmount = remainingDollars.toFixed(2);
+      msgEl.innerHTML = progressMsg.replace(/\$10\.00/g, `<strong>$${formattedAmount}</strong>`);
       const percentage = Math.min((totalDollars / goal) * 100, 100);
       progressEl.style.width = `${percentage}%`;
     } else {

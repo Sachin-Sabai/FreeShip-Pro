@@ -6,6 +6,7 @@ import prisma from "../db.server";
 import { 
   getTemplatesForPlan, TemplatePreview, FREE_TEMPLATES 
 } from "../utils/templates";
+import { syncCampaignToMetafield } from "../utils/metafields.server";
 
 export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);
@@ -14,7 +15,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
   
   const name = formData.get("name") || "Untitled Campaign";
@@ -25,7 +26,7 @@ export const action = async ({ request }) => {
   const animation = formData.get("animation") || "none";
   const placement = formData.get("placement") || "top";
 
-  await prisma.campaign.create({
+  const campaign = await prisma.campaign.create({
     data: {
       shopId: session.shop,
       name,
@@ -37,6 +38,8 @@ export const action = async ({ request }) => {
       config: JSON.stringify({ animation, placement })
     }
   });
+
+  await syncCampaignToMetafield(admin, campaign);
 
   return redirect("/app/campaigns");
 };

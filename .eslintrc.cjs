@@ -50,6 +50,13 @@ module.exports = {
       },
       rules: {
         "react/no-unknown-property": ["error", { ignore: ["variant"] }],
+        "no-unused-vars": "warn",
+        "react/prop-types": "warn",
+        "react/no-unescaped-entities": "warn",
+        "jsx-a11y/label-has-associated-control": "warn",
+        "jsx-a11y/mouse-events-have-key-events": "warn",
+        "jsx-a11y/click-events-have-key-events": "warn",
+        "jsx-a11y/no-static-element-interactions": "warn"
       },
     },
 

@@ -71,3 +71,41 @@
   width: 0%;
   transition: width 0.5s ease-out;
 }
+
+/* Premium Animations */
+@keyframes fs-fill-luxury {
+  0% { width: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  40% { width: 65%; }
+  85% { width: 65%; opacity: 1; }
+  100% { width: 65%; opacity: 0; }
+}
+
+@keyframes fs-fill-neon {
+  0% { width: 0%; box-shadow: 0 0 0px #39ff14; opacity: 0; }
+  15% { opacity: 1; box-shadow: 0 0 8px #39ff14; }
+  45% { width: 65%; box-shadow: 0 0 16px #39ff14; }
+  85% { width: 65%; box-shadow: 0 0 8px #39ff14; opacity: 1; }
+  100% { width: 65%; opacity: 0; }
+}
+
+@keyframes fs-fill-urgency {
+  0% { width: 0%; opacity: 0; }
+  5% { opacity: 1; }
+  25% { width: 65%; }
+  85% { width: 65%; opacity: 1; }
+  100% { width: 65%; opacity: 0; }
+}
+
+@keyframes fs-fill-summer {
+  0% { width: 0%; opacity: 0; }
+  15% { opacity: 1; }
+  50% { width: 65%; }
+  85% { width: 65%; opacity: 1; }
+  100% { width: 65%; opacity: 0; }
+}
+
+@keyframes fs-stripes-move {
+  0% { background-position: 0 0; }
+  100% { background-position: 20px 0; }
+}

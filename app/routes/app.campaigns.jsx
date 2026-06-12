@@ -2,9 +2,10 @@ import { Page, Layout, Card, Text, BlockStack, InlineStack, Badge, Button, Index
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import { useLoaderData, useNavigate, useSubmit } from "react-router";
+import { clearCampaignMetafield } from "../utils/metafields.server";
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
   
   if (formData.get("_action") === "delete") {
@@ -16,6 +17,8 @@ export const action = async ({ request }) => {
           shopId: session.shop
         }
       });
+      // Clear metafield since active campaigns may be deleted
+      await clearCampaignMetafield(admin);
     }
   }
   return { success: true };

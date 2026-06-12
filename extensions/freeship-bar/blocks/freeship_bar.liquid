@@ -4,7 +4,9 @@
 {%- assign text_color = "#FFFFFF" -%}
 {%- assign progress_color = "#22C55E" -%}
 {%- assign success_msg = "Congratulations! You've unlocked FREE shipping" -%}
+{%- assign progress_msg = "Only $10.00 away from free shipping!" -%}
 {%- assign position = "top" -%}
+{%- assign animation = "none" -%}
 
 {%- if settings_json -%}
   {%- assign goal = settings_json.goalAmount | default: 50.0 -%}
@@ -12,7 +14,9 @@
   {%- assign text_color = settings_json.textColor | default: "#FFFFFF" -%}
   {%- assign progress_color = settings_json.progressBarColor | default: "#22C55E" -%}
   {%- assign success_msg = settings_json.successMessage | default: "Congratulations! You've unlocked FREE shipping" -%}
+  {%- assign progress_msg = settings_json.progressMessage | default: "Only $10.00 away from free shipping!" -%}
   {%- assign position = settings_json.position | default: "top" -%}
+  {%- assign animation = settings_json.animation | default: "none" -%}
 {%- endif -%}
 
 {{ 'freeship.css' | asset_url | stylesheet_tag }}
@@ -21,6 +25,7 @@
      class="freeship-pro-bar freeship-position-{{ position }}"
      data-goal="{{ goal }}" 
      data-success-msg="{{ success_msg }}" 
+     data-progress-msg="{{ progress_msg }}"
      data-position="{{ position }}"
      style="--fs-bg: {{ bg_color }}; --fs-text: {{ text_color }}; --fs-progress: {{ progress_color }};">
   <div class="freeship-pro-container">
@@ -36,7 +41,7 @@
       <div id="freeship-pro-msg" class="freeship-pro-msg">Loading free shipping...</div>
     </div>
     <div class="freeship-pro-progress-wrapper">
-      <div id="freeship-pro-progress" class="freeship-pro-progress-bar"></div>
+      <div id="freeship-pro-progress" class="freeship-pro-progress-bar" style="{% if animation != 'none' %}animation: fs-fill-{{ animation }} 3s infinite;{% endif %}"></div>
     </div>
   </div>
 </div>
