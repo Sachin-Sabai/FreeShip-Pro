@@ -19,6 +19,7 @@
   {%- assign animation = settings_json.animation | default: "none" -%}
 {%- endif -%}
 
+{%- if settings_json and settings_json.isActive == true -%}
 <style>
 .freeship-pro-bar {
   background-color: var(--fs-bg);
@@ -184,9 +185,9 @@
 
       if (remainingDollars > 0) {
         const formattedAmount = remainingDollars.toFixed(2);
-        msgEl.innerHTML = progressMsg.replace(/\$10\.00/g, \`<strong>$\${formattedAmount}</strong>\`);
+        msgEl.innerHTML = progressMsg.replace(/\$10\.00/g, `<strong>$${formattedAmount}</strong>`);
         const percentage = Math.min((totalDollars / goal) * 100, 100);
-        progressEl.style.width = \`\${percentage}%\`;
+        progressEl.style.width = `${percentage}%`;
       } else {
         msgEl.innerHTML = successMsg;
         progressEl.style.width = '100%';
@@ -234,11 +235,12 @@
   }
 })();
 </script>
+{%- endif -%}
 
 {% schema %}
 {
   "name": "FreeShip Pro Bar",
-  "target": "section",
+  "target": "body",
   "enabled_on": {
     "templates": ["*"]
   },

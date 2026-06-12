@@ -65,12 +65,13 @@ export const loader = async ({ request }) => {
     ? ((totals.orders / totals.views) * 100).toFixed(1) 
     : "0.0";
 
-  return { shop, totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate, chargeApproved: !!chargeId };
+  return { shop, totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate, chargeApproved: !!chargeId, apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
 
 export default function Dashboard() {
-  const { totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate, chargeApproved } = useLoaderData();
+  const { totals, activeCampaigns, totalCampaigns, currentPlan, conversionRate, chargeApproved, apiKey, shop } = useLoaderData();
   const navigate = useNavigate();
+  const themeEditorLink = `https://admin.shopify.com/store/${shop.id.split('.')[0]}/themes/current/editor?context=apps&activateAppId=${apiKey}/freeship-bar`;
 
   useEffect(() => {
     if (chargeApproved && typeof shopify !== 'undefined') {
@@ -264,7 +265,7 @@ export default function Dashboard() {
                       {[
                         { step: '1', title: 'Pick a Template', desc: 'Choose from our gallery of conversion-optimized designs', icon: '🎨', action: () => navigate('/app/templates') },
                         { step: '2', title: 'Set Your Goal', desc: 'Configure the free shipping threshold for your store', icon: '🎯', action: () => navigate('/app/campaigns/new') },
-                        { step: '3', title: 'Go Live', desc: 'Publish and watch your AOV increase in real-time', icon: '🚀', action: null },
+                        { step: '3', title: 'Go Live', desc: 'Enable the app embed in your Theme Editor to display the bar', icon: '🚀', action: () => window.open(themeEditorLink, '_blank') },
                       ].map((s, i) => (
                         <div key={i} 
                           onClick={s.action}
@@ -286,6 +287,11 @@ export default function Dashboard() {
                           <div style={{ fontSize: '26px', marginBottom: '10px' }}>{s.icon}</div>
                           <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>{s.title}</div>
                           <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5' }}>{s.desc}</div>
+                          {s.step === '3' && (
+                            <div style={{ marginTop: '12px' }}>
+                              <Button variant="primary" tone="success" onClick={(e) => { e.stopPropagation(); window.open(themeEditorLink, '_blank'); }}>Enable App Embed</Button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -322,7 +328,10 @@ export default function Dashboard() {
                           <div style={{ fontSize: '24px', fontWeight: '800', color: '#6366f1' }}>{totalCampaigns}</div>
                         </div>
                       </div>
-                      <Button onClick={() => navigate('/app/campaigns')}>Manage Campaigns →</Button>
+                      <InlineStack align="space-between">
+                        <Button onClick={() => navigate('/app/campaigns')}>Manage Campaigns →</Button>
+                        <Button variant="primary" tone="success" onClick={() => window.open(themeEditorLink, '_blank')}>Theme Editor</Button>
+                      </InlineStack>
                     </BlockStack>
                   </Card>
 

@@ -30,21 +30,22 @@ Since this is an embedded app that must be tested within a Shopify Admin environ
 6. Verify that you are redirected to the Campaigns list and the new campaign shows as active.
 
 ### Step 3: Enable the Theme App Extension
-1. Go to your Shopify Admin -> **Online Store** -> **Themes**.
-2. Click **Customize** on the current live theme.
-3. In the Theme Editor sidebar, click the **App Embeds** icon (third icon down).
-4. Find **FreeShip Pro Bar** and toggle it **ON**.
-5. Click **Save** in the top right corner.
+1. From the FreeShip Pro Dashboard, find the **Getting Started** section or the **Theme Editor** button and click it to deep link into your theme editor.
+2. Alternatively, go to your Shopify Admin -> **Online Store** -> **Themes**.
+3. Click **Customize** on the current live theme.
+4. In the Theme Editor sidebar, click the **App Embeds** icon (third icon down, looks like overlapping blocks).
+5. Find **FreeShip Pro Bar** and toggle it **ON**.
+6. Click **Save** in the top right corner.
 
 ### Step 4: Verify Storefront Functionality
 1. Open the Storefront. (Use the password `freeship2026` if prompted).
 2. Verify that the Free Shipping Bar appears at the top or bottom of the screen.
-3. **Important Check:** Verify that the color and template match exactly what you selected in Step 2. (It should *not* be a generic red bar unless you picked a red template).
+3. **Important Check:** Verify that the color and template match exactly what you selected in Step 2. (It should *not* be a generic red bar unless you picked a red template. The bar only displays when a campaign is active).
 4. **Cart Functionality:** Add a product to your cart.
 5. Verify that the bar instantly updates to show the remaining amount needed to unlock free shipping based on the goal you set.
 
 ## Common Issues Resolved
-- **2.1.1 Critical Error:** The storefront now perfectly syncs with the app dashboard. We have removed all cached/stale metafield behavior.
+- **2.1.1 Critical Error:** The storefront now perfectly syncs with the app dashboard. We have updated the theme extension to be a proper App Embed (`target: "body"`) instead of an App Block, and the bar will safely fall back to not rendering if no active campaign exists.
 - **404/500 Errors:** Embedded app configuration has been strictly enforced, eliminating the cross-site cookie blocking and iframe redirect loops.
 
 Thank you for your time reviewing FreeShip Pro!
