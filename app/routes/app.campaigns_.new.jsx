@@ -23,6 +23,7 @@ export const action = async ({ request }) => {
   const targetCountry = formData.get("targetCountry") || "all";
   const targetDevice = formData.get("targetDevice") || "all";
   const templateId = formData.get("templateId") || "basic";
+  const animation = formData.get("animation") || "none";
   const placement = formData.get("placement") || "top";
 
   const shop = await prisma.shop.findUnique({ where: { id: session.shop } });
@@ -45,7 +46,7 @@ export const action = async ({ request }) => {
       targetCountries: JSON.stringify([targetCountry]),
       targetDevices: targetDevice,
       templateId,
-      config: JSON.stringify({ placement })
+      config: JSON.stringify({ animation, placement })
     }
   });
 
@@ -68,15 +69,18 @@ export default function NewCampaign() {
   const [name, setName] = useState("");
   const [goalAmount, setGoalAmount] = useState("100");
   const [template, setTemplate] = useState(initialTemplate);
+  const [animation, setAnimation] = useState("none");
   const [targetCountry, setTargetCountry] = useState("all");
   const [targetDevice, setTargetDevice] = useState("all");
   const [placement, setPlacement] = useState("top");
+  const [showUpsells, setShowUpsells] = useState(false);
 
   const handleSave = () => {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("goalAmount", goalAmount);
     formData.append("templateId", template);
+    formData.append("animation", animation);
     formData.append("targetCountry", targetCountry);
     formData.append("targetDevice", targetDevice);
     formData.append("placement", placement);
@@ -181,7 +185,7 @@ export default function NewCampaign() {
                 <BlockStack gap="400">
                   <Text as="h2" variant="headingMd">Theme Customizer</Text>
                   <Grid>
-                    <Grid.Cell columnSpan={{xs: 12, sm: 12, md: 12, lg: 12, xl: 12}}>
+                    <Grid.Cell columnSpan={{xs: 6, sm: 6, md: 6, lg: 6, xl: 6}}>
                       <Select 
                         label="Design Template"
                         options={availableTemplates.map(t => ({ label: t.name, value: t.value }))}
@@ -189,7 +193,46 @@ export default function NewCampaign() {
                         onChange={setTemplate}
                       />
                     </Grid.Cell>
+                    <Grid.Cell columnSpan={{xs: 6, sm: 6, md: 6, lg: 6, xl: 6}}>
+                      <Select 
+                        label="Animation Effect"
+                        options={[
+                          {label: 'None', value: 'none'}, 
+                          {label: 'Shine Effect', value: 'shine'},
+                          {label: 'Confetti Unlock', value: 'confetti'},
+                          {label: 'Rocket Progress', value: 'rocket'}
+                        ]}
+                        value={animation}
+                        onChange={setAnimation}
+                      />
+                    </Grid.Cell>
                   </Grid>
+                  
+                  <Divider />
+                  
+                  <InlineStack align="space-between" blockAlign="center">
+                    <Text as="h3" variant="headingSm">Smart Product Suggestions</Text>
+                    <Badge tone="magic">Requires PRO Plan</Badge>
+                  </InlineStack>
+                  <Text as="p" tone="subdued">Automatically suggest products when customers are close to unlocking free shipping.</Text>
+                  
+                  {showUpsells ? (
+                    <BlockStack gap="300">
+                      <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                        <Text as="p" variant="bodyMd">Upsell settings would go here.</Text>
+                      </div>
+                      <Button onClick={() => setShowUpsells(false)}>Hide Settings</Button>
+                    </BlockStack>
+                  ) : (
+                    <button 
+                      className="Polaris-Button Polaris-Button--pressable Polaris-Button--variantSecondary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter fs-button-premium" 
+                      type="button" 
+                      style={{width: 'fit-content'}}
+                      onClick={() => setShowUpsells(true)}
+                    >
+                      <span className="Polaris-Text--root Polaris-Text--bodySm Polaris-Text--medium">Configure Upsells</span>
+                    </button>
+                  )}
                 </BlockStack>
               </Card>
             </BlockStack>
@@ -207,7 +250,7 @@ export default function NewCampaign() {
                     const activeTemplateObj = availableTemplates.find(t => t.value === template) || availableTemplates[0] || FREE_TEMPLATES[0];
                     return (
                       <TemplatePreview 
-                        style={activeTemplateObj.style} 
+                        style={{ ...activeTemplateObj.style, animation: animation !== 'none' ? `fs-fill-${animation} 3s infinite` : activeTemplateObj.style.animation }} 
                         text={activeTemplateObj.previewText} 
                         goalAmount={goalAmount}
                       />

@@ -13,7 +13,7 @@ export async function syncCampaignToMetafield(admin, campaign) {
     successMessage: "Congratulations! You've unlocked FREE shipping",
     progressMessage: templateConfig.previewText || "Only $10.00 away from free shipping!",
     position: JSON.parse(campaign.config || '{}').placement || "top",
-    animation: templateConfig.style.animationKey || "none",
+    animation: JSON.parse(campaign.config || '{}').animation || "none",
     isActive: campaign.isActive
   };
 
