@@ -71,43 +71,55 @@
   display: block !important;
   height: 100% !important;
   min-height: 8px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
   background: var(--fs-progress) !important;
   border-radius: 9999px !important;
   width: 0%;
   transition: width 0.5s ease-out !important;
 }
 
+.freeship-pro-progress-bar[class*="fs-animate"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.fs-animate-luxury {
+  animation: fs-fill-luxury 3s infinite;
+}
+.fs-animate-neon {
+  animation: fs-fill-neon 3s infinite;
+}
+.fs-animate-urgency {
+  animation: fs-fill-urgency 2.5s infinite, fs-stripes-move 0.8s linear infinite;
+}
+.fs-animate-summer {
+  animation: fs-fill-summer 3.5s infinite, fs-stripes-move 1s linear infinite;
+}
+
 /* Premium Animations */
 @keyframes fs-fill-luxury {
-  0% { width: 0%; opacity: 0; }
-  10% { opacity: 1; }
-  40% { width: 65%; }
-  85% { width: 65%; opacity: 1; }
-  100% { width: 65%; opacity: 0; }
+  0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+  50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); }
+  100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
 }
 
 @keyframes fs-fill-neon {
-  0% { width: 0%; box-shadow: 0 0 0px #39ff14; opacity: 0; }
-  15% { opacity: 1; box-shadow: 0 0 8px #39ff14; }
-  45% { width: 65%; box-shadow: 0 0 16px #39ff14; }
-  85% { width: 65%; box-shadow: 0 0 8px #39ff14; opacity: 1; }
-  100% { width: 65%; opacity: 0; }
+  0% { box-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14; }
+  50% { box-shadow: 0 0 20px #39ff14, 0 0 30px #39ff14; }
+  100% { box-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14; }
 }
 
 @keyframes fs-fill-urgency {
-  0% { width: 0%; opacity: 0; }
-  5% { opacity: 1; }
-  25% { width: 65%; }
-  85% { width: 65%; opacity: 1; }
-  100% { width: 65%; opacity: 0; }
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+  100% { filter: brightness(1); }
 }
 
 @keyframes fs-fill-summer {
-  0% { width: 0%; opacity: 0; }
-  15% { opacity: 1; }
-  50% { width: 65%; }
-  85% { width: 65%; opacity: 1; }
-  100% { width: 65%; opacity: 0; }
+  0% { filter: contrast(1); }
+  50% { filter: contrast(1.2); }
+  100% { filter: contrast(1); }
 }
 
 @keyframes fs-stripes-move {
