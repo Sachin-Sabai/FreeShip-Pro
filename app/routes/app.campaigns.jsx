@@ -2,7 +2,7 @@ import { Page, Layout, Card, Text, BlockStack, InlineStack, Badge, Button, Index
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import { useLoaderData, useNavigate, useSubmit } from "react-router";
-import { clearCampaignMetafield } from "../utils/metafields.server";
+import { clearCampaignMetafield, syncCampaignToMetafield } from "../utils/metafields.server";
 
 export const action = async ({ request }) => {
   const { session, admin } = await authenticate.admin(request);
@@ -21,6 +21,28 @@ export const action = async ({ request }) => {
       await clearCampaignMetafield(admin);
     }
   }
+
+  if (formData.get("_action") === "activate") {
+    const id = formData.get("id");
+    const shop = await prisma.shop.findUnique({ where: { id: session.shop } });
+    const activePlan = shop?.plan || "FREE";
+
+    if (activePlan === "FREE" || activePlan === "STARTER") {
+      await prisma.campaign.updateMany({
+        where: { shopId: session.shop },
+        data: { isActive: false }
+      });
+    }
+
+    const updatedCampaign = await prisma.campaign.update({
+      where: { id: id, shopId: session.shop },
+      data: { isActive: true }
+    });
+
+    await syncCampaignToMetafield(admin, updatedCampaign);
+    return { success: true };
+  }
+
   return { success: true };
 };
 
@@ -54,7 +76,23 @@ export default function Campaigns() {
     clearSelection();
   };
 
+  const handleActivate = () => {
+    if (selectedResources.length !== 1) {
+      if (typeof shopify !== 'undefined') shopify.toast.show("Please select exactly one campaign to activate", { isError: true });
+      return;
+    }
+    const formData = new FormData();
+    formData.append("_action", "activate");
+    formData.append("id", selectedResources[0]);
+    submit(formData, { method: "post" });
+    clearSelection();
+  };
+
   const promotedBulkActions = [
+    {
+      content: 'Set Active',
+      onAction: handleActivate,
+    },
     {
       content: 'Delete',
       onAction: handleDelete,

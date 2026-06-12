@@ -26,6 +26,17 @@ export const action = async ({ request }) => {
   const animation = formData.get("animation") || "none";
   const placement = formData.get("placement") || "top";
 
+  const shop = await prisma.shop.findUnique({ where: { id: session.shop } });
+  const activePlan = shop?.plan || "FREE";
+
+  if (activePlan === "FREE" || activePlan === "STARTER") {
+    // Enforce 1 active campaign limit by deactivating others
+    await prisma.campaign.updateMany({
+      where: { shopId: session.shop },
+      data: { isActive: false }
+    });
+  }
+
   const campaign = await prisma.campaign.create({
     data: {
       shopId: session.shop,
@@ -147,7 +158,7 @@ export default function NewCampaign() {
                 <BlockStack gap="400">
                   <InlineStack align="space-between">
                     <Text as="h2" variant="headingMd">Targeting Engine</Text>
-                    <Badge tone="magic">PRO</Badge>
+                    <Badge tone="magic">Requires PRO Plan</Badge>
                   </InlineStack>
                   <Grid>
                     <Grid.Cell columnSpan={{xs: 6, sm: 3, md: 3, lg: 6, xl: 6}}>
@@ -201,7 +212,7 @@ export default function NewCampaign() {
                   
                   <InlineStack align="space-between" blockAlign="center">
                     <Text as="h3" variant="headingSm">Smart Product Suggestions</Text>
-                    <Badge tone="magic">PRO</Badge>
+                    <Badge tone="magic">Requires PRO Plan</Badge>
                   </InlineStack>
                   <Text as="p" tone="subdued">Automatically suggest products when customers are close to unlocking free shipping.</Text>
                   
