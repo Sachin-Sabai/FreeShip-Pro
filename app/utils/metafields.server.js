@@ -12,6 +12,7 @@ export async function syncCampaignToMetafield(admin, campaign) {
     progressBarColor: templateConfig.style.progress || "#22C55E",
     successMessage: "Congratulations! You've unlocked FREE shipping",
     progressMessage: templateConfig.previewText || "Only $10.00 away from free shipping!",
+    progressWrapperBg: templateConfig.style.wrapperBg || "rgba(255,255,255,0.25)",
     position: JSON.parse(campaign.config || '{}').placement || "top",
     animation: templateConfig.style.animationKey || "none",
     isActive: campaign.isActive
